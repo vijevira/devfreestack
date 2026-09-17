@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DevFreeStack — 100% free developer tools, hosting, databases & APIs</title>
+<meta name="description" content="A curated collection of 100% free developer tools, hosting, databases, and APIs." />
+<link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink:    { 950: "#070b0f", 900: "#0b1117", 850: "#0f1620", 800: "#131c26" },
+          edge:   { DEFAULT: "#1e293b" },
+          elec:   "#38bdf8",
+          neon:   "#4ade80",
+          violet2:"#a78bfa",
+        },
+        fontFamily: {
+          sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+          mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root { color-scheme: dark; }
+  html { scroll-behavior: smooth; }
+  body { background-color: #070b0f; -webkit-font-smoothing: antialiased; }
+
+  /* Ambient background: soft radial glows + faint blueprint grid */
+  .bg-canvas::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(60rem 32rem at 12% -8%, rgba(56,189,248,.16), transparent 60%),
+      radial-gradient(48rem 28rem at 88% 4%, rgba(74,222,128,.10), transparent 62%),
+      radial-gradient(40rem 24rem at 50% 110%, rgba(167,139,250,.10), transparent 60%);
+  }
+  .bg-canvas::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .35;
+    background-image:
+      linear-gradient(to right, rgba(148,163,184,.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(148,163,184,.06) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(70% 55% at 50% 0%, #000 40%, transparent 100%);
+    mask-image: radial-gradient(70% 55% at 50% 0%, #000 40%, transparent 100%);
+  }
+  .layer { position: relative; z-index: 1; }
+
+  /* Cards */
+  .card { transition: transform .18s ease, border-color .18s ease, background-color .18s ease, box-shadow .18s ease; }
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(56,189,248,.45);
+    box-shadow: 0 0 0 1px rgba(56,189,248,.12), 0 18px 40px -20px rgba(56,189,248,.45);
+  }
+  .card:hover .card-icon-wrap { border-color: rgba(56,189,248,.5); color: #38bdf8; background-color: rgba(56,189,248,.10); }
+  .card-icon-wrap { transition: color .18s ease, border-color .18s ease, background-color .18s ease; }
+
+  /* Tier badges */
+  .badge[data-tier="Forever Free"] { color:#4ade80; background:rgba(74,222,128,.10); border-color:rgba(74,222,128,.32); }
+  .badge[data-tier="Free Tier"]    { color:#38bdf8; background:rgba(56,189,248,.10); border-color:rgba(56,189,248,.32); }
+  .badge[data-tier="Open Source"]  { color:#a78bfa; background:rgba(167,139,250,.10); border-color:rgba(167,139,250,.32); }
+
+  /* Filter pills */
+  .pill { transition: color .15s ease, background-color .15s ease, border-color .15s ease; }
+  .pill[aria-pressed="true"] { color:#06121a; background-color:#38bdf8; border-color:#38bdf8; font-weight:600; }
+
+  /* Bookmark */
+  .bookmark-btn svg { transition: transform .15s ease, color .15s ease; }
+  .bookmark-btn.is-saved { color:#fbbf24; }
+  .bookmark-btn.is-saved svg { fill: currentColor; }
+  .bookmark-btn:active svg { transform: scale(.82); }
+
+  /* Copy button */
+  .copy-btn .icon-check { display: none; }
+  .copy-btn.copied { color:#4ade80; border-color: rgba(74,222,128,.5); }
+  .copy-btn.copied .icon-copy { display: none; }
+  .copy-btn.copied .icon-check { display: inline-block; }
+
+  /* Card entrance */
+  @keyframes rise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  .card-enter { animation: rise .34s cubic-bezier(.22,1,.36,1) both; }
+
+  #toast { transition: opacity .2s ease, transform .2s ease; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #070b0f; }
+  ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 999px; border: 2px solid #070b0f; }
+  ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  ::selection { background: rgba(56,189,248,.28); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+
+<body class="bg-canvas font-sans text-slate-300 antialiased">
+<div class="layer">
+
+  <!-- ============ HEADER ============ -->
+  <header class="sticky top-0 z-40 border-b border-slate-800/70 bg-ink-950/80 backdrop-blur-xl">
+    <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:gap-6">
+
+      <a href="/" class="flex shrink-0 items-center gap-2.5">
+        <span class="grid h-9 w-9 place-items-center rounded-lg border border-slate-700/70 bg-slate-900/80 text-elec shadow-[0_0_22px_-6px_rgba(56,189,248,.6)]">
+          <i data-lucide="braces" class="h-5 w-5"></i>
+        </span>
+        <span class="font-mono text-[15px] font-bold tracking-tight text-white">
+          Dev<span class="text-elec">Free</span>Stack
+        </span>
+      </a>
+
+      <div class="relative flex-1">
+        <span class="pointer-events-none absolute inset-y-0 left-0 grid w-11 place-items-center text-slate-500">
+          <i data-lucide="search" class="h-[18px] w-[18px]"></i>
+        </span>
+        <input
+          id="search"
+          type="search"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Search tools, categories, or descriptions…"
+          aria-label="Search tools"
+          class="h-11 w-full rounded-xl border border-slate-800 bg-slate-900/60 pl-11 pr-24 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-elec/60 focus:bg-slate-900 focus:ring-4 focus:ring-elec/10"
+        />
+        <div class="absolute inset-y-0 right-0 flex items-center gap-1 pr-2">
+          <kbd id="clear-search" class="hidden cursor-pointer rounded-md border border-slate-700 bg-slate-800/70 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 hover:text-slate-200">esc</kbd>
+          <kbd class="hidden rounded-md border border-slate-700 bg-slate-800/70 px-1.5 py-0.5 font-mono text-[10px] text-slate-500 sm:inline-block">/</kbd>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="saved-toggle" aria-pressed="false"
+          class="pill inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 px-3 text-xs font-medium text-slate-400 hover:border-slate-700 hover:text-slate-200">
+          <i data-lucide="star" class="h-3.5 w-3.5"></i>
+          Saved <span id="saved-count" class="font-mono text-[10px] opacity-70">0</span>
+        </button>
+        <a href="https://github.com/vijevira/devfreestack/issues/new?template=suggest-a-tool.yml"
+           target="_blank" rel="noopener"
+           class="inline-flex h-9 items-center gap-1.5 rounded-lg bg-elec px-3 text-xs font-semibold text-ink-950 transition hover:bg-sky-300">
+          <i data-lucide="plus" class="h-3.5 w-3.5"></i> Suggest a tool
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section class="mx-auto max-w-7xl px-4 pb-8 pt-12 sm:px-6 sm:pt-16">
+    <div class="max-w-3xl">
+      <span class="inline-flex items-center gap-2 rounded-full border border-neon/30 bg-neon/5 px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-neon">
+        <span class="relative flex h-1.5 w-1.5">
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon opacity-75"></span>
+          <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-neon"></span>
+        </span>
+        $0 forever · no credit card
+      </span>
+
+      <h1 class="mt-5 text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+        Ship for <span class="bg-gradient-to-r from-elec via-sky-300 to-neon bg-clip-text text-transparent">free</span>.<br />
+        <span class="text-slate-400">Scale when you're ready.</span>
+      </h1>
+
+      <p class="mt-5 max-w-2xl text-base leading-relaxed text-slate-400 sm:text-lg">
+        A curated collection of <strong class="font-semibold text-slate-200">100% free</strong> developer tools, hosting,
+        databases, and APIs. Every entry below has a genuinely usable free tier — no trials that expire in 14 days.
+      </p>
+
+      <dl id="stats" class="mt-8 grid max-w-lg grid-cols-3 gap-3">
+        <div class="rounded-xl border border-slate-800/80 bg-slate-900/40 px-4 py-3">
+          <dt class="font-mono text-[10px] uppercase tracking-wider text-slate-500">Tools</dt>
+          <dd id="stat-tools" class="mt-0.5 text-2xl font-bold text-white">—</dd>
+        </div>
+        <div class="rounded-xl border border-slate-800/80 bg-slate-900/40 px-4 py-3">
+          <dt class="font-mono text-[10px] uppercase tracking-wider text-slate-500">Categories</dt>
+          <dd id="stat-cats" class="mt-0.5 text-2xl font-bold text-white">—</dd>
+        </div>
+        <div class="rounded-xl border border-slate-800/80 bg-slate-900/40 px-4 py-3">
+          <dt class="font-mono text-[10px] uppercase tracking-wider text-slate-500">Cost</dt>
+          <dd class="mt-0.5 text-2xl font-bold text-neon">$0</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ============ TOOLS ============ -->
+  <main id="tools" class="mx-auto max-w-7xl scroll-mt-24 px-4 pb-20 sm:px-6">
+
+    <div class="flex flex-col gap-4 border-t border-slate-800/70 pt-8 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-wrap gap-2" id="pills" role="group" aria-label="Filter by category"></div>
+      <p class="shrink-0 font-mono text-xs text-slate-500">
+        <span id="result-count" class="text-slate-300">0</span> of <span id="total-count">0</span> shown
+      </p>
+    </div>
+
+    <div id="grid" class="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+
+    <div id="loading" class="mt-7 flex flex-col items-center justify-center gap-3 py-24 text-slate-500">
+      <i data-lucide="loader" class="h-6 w-6 animate-spin text-elec"></i>
+      <p class="font-mono text-[11px] uppercase tracking-wider">Loading directory…</p>
+    </div>
+
+    <div id="error" class="mt-7 hidden rounded-2xl border border-red-500/30 bg-red-500/5 px-6 py-16 text-center">
+      <span class="mx-auto grid h-12 w-12 place-items-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-400">
+        <i data-lucide="wifi-off" class="h-6 w-6"></i>
+      </span>
+      <h3 class="mt-4 text-base font-semibold text-slate-200">Couldn't load the directory</h3>
+      <p id="error-message" class="mx-auto mt-1 max-w-sm text-sm text-slate-500"></p>
+      <button id="retry" class="mt-5 inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3.5 text-xs font-medium text-slate-200 hover:border-elec/50 hover:text-elec">
+        <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i> Try again
+      </button>
+    </div>
+
+    <div id="empty" class="hidden rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 px-6 py-20 text-center">
+      <span class="mx-auto grid h-12 w-12 place-items-center rounded-xl border border-slate-800 bg-slate-900 text-slate-500">
+        <i data-lucide="search-x" class="h-6 w-6"></i>
+      </span>
+      <h3 class="mt-4 text-base font-semibold text-slate-200">No tools match that</h3>
+      <p class="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+        Try a broader term like <em class="font-mono not-italic text-slate-400">postgres</em>,
+        <em class="font-mono not-italic text-slate-400">email</em>, or <em class="font-mono not-italic text-slate-400">hosting</em>.
+      </p>
+      <button id="reset" class="mt-5 inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3.5 text-xs font-medium text-slate-200 hover:border-elec/50 hover:text-elec">
+        <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i> Clear filters
+      </button>
+
+      <!-- Highest-intent contribution prompt: they searched for something we don't have. -->
+      <p class="mx-auto mt-6 max-w-sm border-t border-slate-800/70 pt-5 text-sm text-slate-500">
+        Know a tool we're missing?
+        <a href="https://github.com/vijevira/devfreestack/issues/new?template=suggest-a-tool.yml"
+           target="_blank" rel="noopener"
+           class="font-medium text-elec underline-offset-4 hover:underline">Suggest it →</a>
+      </p>
+    </div>
+
+    <noscript>
+      <p class="mt-7 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-6 text-center text-sm text-slate-400">
+        This directory loads its tools from an API, so it needs JavaScript enabled.
+      </p>
+    </noscript>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="border-t border-slate-800/70 bg-ink-950/60">
+    <div class="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-10 text-center sm:px-6 md:flex-row md:justify-between md:text-left">
+      <div>
+        <p class="flex items-center justify-center gap-2 font-mono text-sm font-semibold text-slate-300 md:justify-start">
+          <i data-lucide="braces" class="h-4 w-4 text-elec"></i> DevFreeStack
+        </p>
+        <p class="mt-1.5 text-sm text-slate-500">Built for developers who love free infrastructure.</p>
+      </div>
+      <div class="text-sm text-slate-500">
+        <p>
+          Spotted a new free tier?
+          <a href="https://github.com/vijevira/devfreestack/issues/new?template=suggest-a-tool.yml"
+             target="_blank" rel="noopener"
+             class="text-elec underline-offset-4 hover:underline">Suggest a tool</a>
+          or
+          <a href="https://github.com/vijevira/devfreestack"
+             target="_blank" rel="noopener"
+             class="text-elec underline-offset-4 hover:underline">view the source</a>.
+        </p>
+        <p class="mt-1.5 font-mono text-xs text-slate-600">
+          © <span id="year">2025</span> DevFreeStack · Free tiers change — always check the vendor's current terms.
+        </p>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ============ CARD TEMPLATE ============ -->
+<template id="card-template">
+  <article class="card card-enter group relative flex flex-col rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-sm">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex min-w-0 items-center gap-3">
+        <span class="card-icon-wrap grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-800 bg-slate-900 text-slate-400">
+          <i class="card-icon h-5 w-5"></i>
+        </span>
+        <div class="min-w-0">
+          <h3 class="card-name truncate text-[15px] font-semibold leading-tight text-slate-100"></h3>
+          <p class="card-cat mt-0.5 truncate font-mono text-[10px] uppercase tracking-wider text-slate-500"></p>
+        </div>
+      </div>
+      <button class="bookmark-btn -mr-1 -mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-800/70 hover:text-slate-300" aria-pressed="false" aria-label="Bookmark">
+        <i data-lucide="star" class="h-4 w-4"></i>
+      </button>
+    </div>
+
+    <p class="card-desc mt-4 text-sm leading-relaxed text-slate-400"></p>
+
+    <button type="button" class="code-chip mt-3 items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-1.5 text-left transition hover:border-neon/50 hover:bg-neon/5" style="display:none" aria-label="Copy invite code">
+      <i data-lucide="ticket" class="h-3.5 w-3.5 shrink-0 text-slate-500"></i>
+      <span class="code-chip-label shrink-0 font-mono text-[10px] uppercase tracking-wider text-slate-500"></span>
+      <span class="code-chip-value ml-auto font-mono text-xs font-semibold tracking-wide text-neon"></span>
+      <i data-lucide="copy" class="h-3.5 w-3.5 shrink-0 text-slate-500"></i>
+    </button>
+
+    <div class="mt-5 flex items-center justify-between gap-3 border-t border-slate-800/70 pt-4">
+      <span class="badge inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider"></span>
+      <div class="flex items-center gap-2">
+        <button class="copy-btn grid h-8 w-8 place-items-center rounded-lg border border-slate-800 bg-slate-900 text-slate-400 transition hover:border-slate-600 hover:text-slate-100" aria-label="Copy link">
+          <i data-lucide="link" class="icon-copy h-3.5 w-3.5"></i>
+          <i data-lucide="check" class="icon-check h-3.5 w-3.5"></i>
+        </button>
+        <a class="visit-btn inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/60 px-3 text-xs font-medium text-slate-200 transition hover:border-elec/60 hover:bg-elec/10 hover:text-elec" target="_blank" rel="noopener">
+          Visit Site <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
+        </a>
+      </div>
+    </div>
+  </article>
+</template>
+
+<div id="toast" role="status" aria-live="polite"
+  class="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 translate-y-3 rounded-xl border border-slate-700 bg-slate-900/95 px-4 py-2.5 text-sm text-slate-100 opacity-0 shadow-2xl backdrop-blur">
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- Static config ----------------
+     Categories are fixed UI structure; the tools themselves come from
+     GET /api/tools so the directory can be edited without a code change. */
+  const CATEGORIES = [
+    { id: "all",   label: "All" },
+    { id: "dns",   label: "DNS & Domain" },
+    { id: "comms", label: "Communication & Email" },
+    { id: "ai",    label: "AI & Coding" },
+    { id: "edge",  label: "Frontend & Edge" },
+    { id: "paas",  label: "Backend & PaaS" },
+    { id: "db",    label: "Databases & Caching" },
+  ];
+  const CAT_LABEL = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]));
+
+  /* ---------------- State ---------------- */
+  const STORE_KEY = "devfreestack:bookmarks";
+  const state = { query: "", cat: "all", savedOnly: false };
+
+  let TOOLS = [];
+  let bookmarks = new Set();
+  try { bookmarks = new Set(JSON.parse(localStorage.getItem(STORE_KEY) || "[]")); } catch { /* ignore */ }
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const grid = $("#grid");
+  const pillsEl = $("#pills");
+  const searchEl = $("#search");
+  const emptyEl = $("#empty");
+  const loadingEl = $("#loading");
+  const errorEl = $("#error");
+  const tpl = $("#card-template");
+  const toastEl = $("#toast");
+
+  function icons() { if (window.lucide) window.lucide.createIcons(); }
+
+  /* ---------------- Toast ---------------- */
+  let toastTimer;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.style.opacity = "1";
+    toastEl.style.transform = "translate(-50%, 0)";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastEl.style.opacity = "0";
+      toastEl.style.transform = "translate(-50%, 12px)";
+    }, 1800);
+  }
+
+  /* ---------------- Copy ---------------- */
+  async function writeClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch { /* ignore */ }
+      ta.remove();
+    }
+  }
+
+  async function copyUrl(url, btn) {
+    await writeClipboard(url);
+    btn.classList.add("copied");
+    setTimeout(() => btn.classList.remove("copied"), 1400);
+    toast("Link copied to clipboard");
+  }
+
+  /* ---------------- Pills ---------------- */
+  function buildPills() {
+    pillsEl.innerHTML = "";
+    for (const c of CATEGORIES) {
+      const count = c.id === "all" ? TOOLS.length : TOOLS.filter((t) => t.cats.includes(c.id)).length;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "pill inline-flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs font-medium text-slate-400 hover:border-slate-600 hover:text-slate-200";
+      b.dataset.cat = c.id;
+      b.setAttribute("aria-pressed", String(state.cat === c.id));
+      const label = document.createElement("span");
+      label.textContent = c.label;
+      const num = document.createElement("span");
+      num.className = "font-mono text-[10px] opacity-60";
+      num.textContent = count;
+      b.append(label, num);
+      b.addEventListener("click", () => { state.cat = c.id; state.savedOnly = false; render(); });
+      pillsEl.appendChild(b);
+    }
+  }
+
+  /* ---------------- Card ---------------- */
+  function makeCard(tool) {
+    const node = tpl.content.firstElementChild.cloneNode(true);
+    const saved = bookmarks.has(tool.name);
+
+    $(".card-icon", node).setAttribute("data-lucide", tool.icon || "wrench");
+    $(".card-name", node).textContent = tool.name;
+    $(".card-cat", node).textContent = tool.cats.map((c) => CAT_LABEL[c] || c).join(" · ");
+    $(".card-desc", node).textContent = tool.desc;
+
+    const badge = $(".badge", node);
+    badge.textContent = tool.tier;
+    badge.dataset.tier = tool.tier;
+
+    const visit = $(".visit-btn", node);
+    visit.href = tool.url;
+    visit.title = tool.url;
+
+    $(".copy-btn", node).addEventListener("click", (e) => copyUrl(tool.url, e.currentTarget));
+
+    // Optional copyable code (invite / referral), e.g. DNSHE
+    const chip = $(".code-chip", node);
+    if (tool.code) {
+      chip.style.display = "flex";
+      chip.title = "Click to copy " + tool.code.label.toLowerCase();
+      $(".code-chip-label", node).textContent = tool.code.label;
+      $(".code-chip-value", node).textContent = tool.code.value;
+      chip.addEventListener("click", async () => {
+        await writeClipboard(tool.code.value);
+        const value = $(".code-chip-value", node);
+        value.textContent = "Copied!";
+        setTimeout(() => { value.textContent = tool.code.value; }, 1400);
+        toast(tool.code.label + " copied");
+      });
+    }
+
+    const star = $(".bookmark-btn", node);
+    star.classList.toggle("is-saved", saved);
+    star.setAttribute("aria-pressed", String(saved));
+    star.setAttribute("aria-label", (saved ? "Remove bookmark for " : "Bookmark ") + tool.name);
+    star.addEventListener("click", () => {
+      if (bookmarks.has(tool.name)) { bookmarks.delete(tool.name); toast("Removed " + tool.name); }
+      else { bookmarks.add(tool.name); toast("Saved " + tool.name); }
+      try { localStorage.setItem(STORE_KEY, JSON.stringify([...bookmarks])); } catch { /* ignore */ }
+      render();
+    });
+
+    return node;
+  }
+
+  /* ---------------- Filter + render ---------------- */
+  function matches(tool, q) {
+    if (!q) return true;
+    const haystack = [
+      tool.name, tool.desc, tool.tier, tool.code ? tool.code.value : "",
+      ...tool.cats.map((c) => CAT_LABEL[c] || c),
+    ].join(" ").toLowerCase();
+    return q.split(/\s+/).every((word) => haystack.includes(word));
+  }
+
+  function render() {
+    const q = state.query.trim().toLowerCase();
+    const results = TOOLS.filter((t) => {
+      if (state.savedOnly && !bookmarks.has(t.name)) return false;
+      if (state.cat !== "all" && !t.cats.includes(state.cat)) return false;
+      return matches(t, q);
+    });
+
+    grid.innerHTML = "";
+    const frag = document.createDocumentFragment();
+    results.forEach((tool, i) => {
+      const card = makeCard(tool);
+      card.style.animationDelay = Math.min(i * 22, 320) + "ms";
+      frag.appendChild(card);
+    });
+    grid.appendChild(frag);
+
+    for (const b of pillsEl.children) {
+      b.setAttribute("aria-pressed", String(!state.savedOnly && b.dataset.cat === state.cat));
+    }
+    $("#saved-toggle").setAttribute("aria-pressed", String(state.savedOnly));
+
+    $("#result-count").textContent = results.length;
+    $("#total-count").textContent = TOOLS.length;
+    $("#saved-count").textContent = bookmarks.size;
+
+    emptyEl.classList.toggle("hidden", results.length > 0);
+    grid.classList.toggle("hidden", results.length === 0);
+
+    icons();
+  }
+
+  /* ---------------- Events ---------------- */
+  let rafId = 0;
+  searchEl.addEventListener("input", (e) => {
+    state.query = e.target.value;
+    $("#clear-search").classList.toggle("hidden", state.query.length === 0);
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(render);
+  });
+
+  function clearSearch() {
+    searchEl.value = ""; state.query = "";
+    $("#clear-search").classList.add("hidden");
+    render(); searchEl.focus();
+  }
+
+  $("#clear-search").addEventListener("click", clearSearch);
+
+  $("#reset").addEventListener("click", () => {
+    state.cat = "all"; state.savedOnly = false;
+    searchEl.value = ""; state.query = "";
+    $("#clear-search").classList.add("hidden");
+    render();
+  });
+
+  $("#saved-toggle").addEventListener("click", () => {
+    state.savedOnly = !state.savedOnly;
+    render();
+    if (state.savedOnly && bookmarks.size === 0) toast("No bookmarks yet — tap the star on a card");
+  });
+
+  document.addEventListener("keydown", (e) => {
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if (e.key === "/" && !typing) { e.preventDefault(); searchEl.focus(); }
+    if (e.key === "Escape" && (typing || state.query)) clearSearch();
+  });
+
+  $("#retry").addEventListener("click", boot);
+
+  /* ---------------- Boot ---------------- */
+  async function loadTools() {
+    const res = await fetch("/api/tools", { headers: { accept: "application/json" } });
+    if (!res.ok) throw new Error(`API responded ${res.status}`);
+    const data = await res.json();
+    if (!Array.isArray(data.tools)) throw new Error("Malformed API response");
+    TOOLS = data.tools;
+  }
+
+  async function boot() {
+    errorEl.classList.add("hidden");
+    grid.classList.add("hidden");
+    loadingEl.classList.remove("hidden");
+
+    try {
+      await loadTools();
+    } catch (err) {
+      loadingEl.classList.add("hidden");
+      errorEl.classList.remove("hidden");
+      $("#error-message").textContent =
+        "The tools API didn't respond (" + err.message + "). This is usually temporary.";
+      icons();
+      return;
+    }
+
+    loadingEl.classList.add("hidden");
+    grid.classList.remove("hidden");
+    $("#stat-tools").textContent = TOOLS.length;
+    buildPills();
+    render();
+  }
+
+  $("#year").textContent = new Date().getFullYear();
+  $("#stat-cats").textContent = CATEGORIES.length - 1;
+  boot();
+})();
+</script>
+</body>
+</html>
