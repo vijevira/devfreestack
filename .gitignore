@@ -1,0 +1,17 @@
+# Secrets
+#
+# Environment variables (ADMIN_KEY and anything you add later) live in Val Town's
+# UI, not in a file — so there is normally nothing to leak here. This covers the
+# case where you create a local .env for testing.
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
