@@ -1,0 +1,84 @@
+name: Suggest a tool
+description: Propose a developer tool, service or free tier that belongs in the directory
+title: "[Tool] "
+labels: ["suggestion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing. The directory only lists tools that are **genuinely free to use** —
+        no 14-day trials, no "free forever" plans that quietly expired.
+
+  - type: input
+    id: name
+    attributes:
+      label: Tool name
+      description: The name as it should appear on the card.
+      placeholder: Neon
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: Website URL
+      description: Full URL, including any invite or referral parameters.
+      placeholder: https://neon.tech/
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: Pick one or more. Choose the closest fit if you're unsure.
+      multiple: true
+      options:
+        - DNS & Domain
+        - Communication & Email
+        - AI & Coding
+        - Frontend & Edge
+        - Backend & PaaS
+        - Databases & Caching
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Free tier type
+      options:
+        - Forever Free — free indefinitely, no time limit
+        - Free Tier — a permanent free plan with usage caps
+        - Open Source — self-hostable, the project itself is free
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: One or two sentences on what the free tier actually gets you. This text goes straight onto the card.
+      placeholder: Serverless Postgres with instant branching, scale-to-zero compute and a database-per-preview workflow.
+    validations:
+      required: true
+
+  - type: input
+    id: code
+    attributes:
+      label: Invite or referral code (optional)
+      description: Leave blank unless the tool has one. It renders as a click-to-copy chip on the card.
+      placeholder: ESB9EDBVDE
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before you submit
+      options:
+        - label: This tool is genuinely free to use — no expiring trial and no credit card required.
+          required: true
+        - label: I've checked it isn't already listed in the directory.
+          required: true
