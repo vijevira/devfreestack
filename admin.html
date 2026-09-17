@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DevFreeStack — Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://esm.town/v/std/catch"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: { ink: { 950: "#070b0f", 900: "#0b1117", 800: "#131c26" }, elec: "#38bdf8", neon: "#4ade80" },
+        fontFamily: {
+          sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+          mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root { color-scheme: dark; }
+  body { background-color: #070b0f; -webkit-font-smoothing: antialiased; }
+  .field {
+    width: 100%; border-radius: .5rem; border: 1px solid #1e293b; background: #0b1117;
+    padding: .5rem .75rem; font-size: .875rem; color: #e2e8f0; outline: none;
+  }
+  .field:focus { border-color: rgba(56,189,248,.6); box-shadow: 0 0 0 3px rgba(56,189,248,.12); }
+  .field::placeholder { color: #475569; }
+  .label { display: block; margin-bottom: .375rem; font-size: .75rem; font-weight: 500; color: #94a3b8; }
+  .hint { margin-top: .375rem; font-size: .6875rem; color: #64748b; }
+  .btn {
+    display: inline-flex; align-items: center; gap: .375rem; border-radius: .5rem;
+    font-size: .8125rem; font-weight: 500; padding: .5rem .875rem; transition: all .15s ease;
+  }
+  .btn-primary { background: #38bdf8; color: #06121a; }
+  .btn-primary:hover { background: #7dd3fc; }
+  .btn-ghost { border: 1px solid #1e293b; background: #0b1117; color: #cbd5e1; }
+  .btn-ghost:hover { border-color: #475569; color: #fff; }
+  .btn-danger { border: 1px solid rgba(248,113,113,.35); background: rgba(248,113,113,.08); color: #fca5a5; }
+  .btn-danger:hover { background: rgba(248,113,113,.16); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .pill[aria-pressed="true"] { background: #38bdf8; border-color: #38bdf8; color: #06121a; font-weight: 600; }
+  tr.row:hover { background: rgba(30,41,59,.4); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #070b0f; }
+  ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 999px; border: 2px solid #070b0f; }
+  ::selection { background: rgba(56,189,248,.28); }
+</style>
+</head>
+
+<body class="font-sans text-slate-300 antialiased">
+
+<header class="sticky top-0 z-30 border-b border-slate-800/70 bg-ink-950/90 backdrop-blur-xl">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+    <a href="/" class="flex items-center gap-2.5">
+      <span class="grid h-9 w-9 place-items-center rounded-lg border border-slate-700/70 bg-slate-900/80 text-elec">
+        <i data-lucide="braces" class="h-5 w-5"></i>
+      </span>
+      <span class="font-mono text-[15px] font-bold tracking-tight text-white">
+        Dev<span class="text-elec">Free</span>Stack
+      </span>
+    </a>
+    <span class="rounded-md border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-400">
+      Admin
+    </span>
+    <div class="ml-auto flex items-center gap-2">
+      <span id="count-badge" class="font-mono text-xs text-slate-500">—</span>
+      <a href="/" class="btn btn-ghost">
+        <i data-lucide="external-link" class="h-3.5 w-3.5"></i> View site
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+
+  <!-- Setup / auth banner -->
+  <div id="banner" class="mb-6 hidden rounded-xl border px-4 py-3 text-sm"></div>
+
+  <!-- Access key -->
+  <section class="mb-6 rounded-2xl border border-slate-800/80 bg-ink-900/40 p-5">
+    <div class="flex flex-wrap items-end gap-3">
+      <div class="min-w-[16rem] flex-1">
+        <label class="label" for="key">Admin key</label>
+        <input id="key" type="password" class="field font-mono" placeholder="Paste the ADMIN_KEY value" autocomplete="off" />
+        <p class="hint">
+          Stored only in this browser's <code class="font-mono">localStorage</code> and sent as an
+          <code class="font-mono">X-Admin-Key</code> header. It must match the val's <code class="font-mono">ADMIN_KEY</code> environment variable.
+        </p>
+      </div>
+      <button id="save-key" class="btn btn-ghost">
+        <i data-lucide="key-round" class="h-3.5 w-3.5"></i> Save key
+      </button>
+    </div>
+  </section>
+
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+
+    <!-- Form -->
+    <section class="rounded-2xl border border-slate-800/80 bg-ink-900/40 p-5 lg:sticky lg:top-24 lg:self-start">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 id="form-title" class="text-sm font-semibold text-white">Add a tool</h2>
+        <button id="cancel-edit" class="btn btn-ghost hidden !px-2 !py-1 !text-xs">Cancel</button>
+      </div>
+
+      <form id="tool-form" class="space-y-4">
+        <div>
+          <label class="label" for="f-name">Name</label>
+          <input id="f-name" class="field" required maxlength="80" placeholder="Neon" />
+        </div>
+
+        <div>
+          <label class="label" for="f-url">URL</label>
+          <input id="f-url" class="field font-mono text-xs" required placeholder="https://neon.tech/" />
+          <p class="hint">Referral/invite parameters are fine — keep the full URL.</p>
+        </div>
+
+        <div>
+          <span class="label">Categories</span>
+          <div id="cats" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="label" for="f-tier">Tier</label>
+            <select id="f-tier" class="field"></select>
+          </div>
+          <div>
+            <label class="label" for="f-icon">Lucide icon</label>
+            <input id="f-icon" class="field font-mono text-xs" placeholder="zap" value="wrench" />
+          </div>
+        </div>
+
+        <div>
+          <label class="label" for="f-desc">Description</label>
+          <textarea id="f-desc" class="field" rows="4" required maxlength="400" placeholder="One or two sentences on what the free tier actually gets you."></textarea>
+        </div>
+
+        <fieldset class="rounded-xl border border-slate-800 p-3">
+          <legend class="px-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">Optional code</legend>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="label" for="f-code-label">Label</label>
+              <input id="f-code-label" class="field" maxlength="40" placeholder="Invite code" />
+            </div>
+            <div>
+              <label class="label" for="f-code-value">Value</label>
+              <input id="f-code-value" class="field font-mono text-xs" maxlength="120" placeholder="ESB9EDBVDE" />
+            </div>
+          </div>
+          <p class="hint">Renders as a click-to-copy chip on the card. Also searchable.</p>
+        </fieldset>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button type="submit" id="submit-btn" class="btn btn-primary">
+            <i data-lucide="plus" class="h-3.5 w-3.5"></i> <span id="submit-label">Add tool</span>
+          </button>
+          <span id="form-status" class="text-xs text-slate-500"></span>
+        </div>
+      </form>
+    </section>
+
+    <!-- List -->
+    <section class="rounded-2xl border border-slate-800/80 bg-ink-900/40">
+      <div class="flex flex-wrap items-center gap-3 border-b border-slate-800/70 px-5 py-3">
+        <h2 class="text-sm font-semibold text-white">Directory</h2>
+        <input id="filter" class="field ml-auto max-w-[14rem] !py-1.5 !text-xs" placeholder="Filter…" />
+        <button id="refresh" class="btn btn-ghost !px-2 !py-1.5">
+          <i data-lucide="refresh-cw" class="h-3.5 w-3.5"></i>
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-slate-800/70 text-left font-mono text-[10px] uppercase tracking-wider text-slate-500">
+              <th class="px-5 py-2 font-medium">Name</th>
+              <th class="px-3 py-2 font-medium">Categories</th>
+              <th class="px-3 py-2 font-medium">Tier</th>
+              <th class="px-3 py-2 font-medium">Code</th>
+              <th class="px-5 py-2 text-right font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p id="empty-row" class="hidden px-5 py-10 text-center text-sm text-slate-500">No tools yet — add one on the left.</p>
+    </section>
+  </div>
+</main>
+
+<div id="toast" role="status" aria-live="polite"
+  class="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 translate-y-3 rounded-xl border border-slate-700 bg-slate-900/95 px-4 py-2.5 text-sm text-slate-100 opacity-0 shadow-2xl backdrop-blur">
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const KEY_STORAGE = "devfreestack:adminKey";
+  const CATEGORY_LABELS = {
+    dns: "DNS & Domain",
+    comms: "Communication & Email",
+    ai: "AI & Coding",
+    edge: "Frontend & Edge",
+    paas: "Backend & PaaS",
+    db: "Databases & Caching",
+  };
+
+  const $ = (sel) => document.querySelector(sel);
+  const rowsEl = $("#rows");
+  const form = $("#tool-form");
+  const status = { writable: false, configured: false, count: 0, categories: [], tiers: [] };
+
+  let tools = [];
+  let editingId = null;
+
+  /* ---------------- helpers ---------------- */
+
+  function toast(msg) {
+    const el = $("#toast");
+    el.textContent = msg;
+    el.style.opacity = "1";
+    el.style.transform = "translate(-50%, 0)";
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => {
+      el.style.opacity = "0";
+      el.style.transform = "translate(-50%, 12px)";
+    }, 2200);
+  }
+
+  function icons() { if (window.lucide) window.lucide.createIcons(); }
+
+  function key() { return localStorage.getItem(KEY_STORAGE) || ""; }
+
+  async function api(path, options = {}) {
+    const headers = Object.assign({ "content-type": "application/json" }, options.headers || {});
+    const k = key();
+    if (k) headers["x-admin-key"] = k;
+    const res = await fetch(path, Object.assign({}, options, { headers }));
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+    return body;
+  }
+
+  /* ---------------- banner ---------------- */
+
+  function renderBanner() {
+    const el = $("#banner");
+    el.className = "mb-6 rounded-xl border px-4 py-3 text-sm";
+
+    if (!status.configured) {
+      el.classList.remove("hidden");
+      el.classList.add("border-amber-500/40", "bg-amber-500/10", "text-amber-200");
+      el.innerHTML =
+        '<strong class="font-semibold">Writes are disabled.</strong> This val has no <code class="font-mono">ADMIN_KEY</code> set, ' +
+        'so the API rejects every create/update/delete. Add one, then paste the same value above.' +
+        '<br><span class="mt-1 inline-block font-mono text-xs text-amber-300/90">' +
+        '👉 Add ADMIN_KEY here: https://www.val.town/x/vijevira/devfreestack/environment-variables?key=ADMIN_KEY</span>';
+      return;
+    }
+
+    if (!status.writable) {
+      el.classList.remove("hidden");
+      el.classList.add("border-sky-500/40", "bg-sky-500/10", "text-sky-200");
+      el.innerHTML = '<strong class="font-semibold">Locked.</strong> Enter the admin key above to enable editing.';
+      return;
+    }
+
+    el.classList.remove("hidden");
+    el.classList.add("border-neon/40", "bg-neon/10", "text-neon");
+    el.innerHTML = '<strong class="font-semibold">Unlocked.</strong> You can add, edit and delete tools.';
+  }
+
+  /* ---------------- form ---------------- */
+
+  function buildCategoryBoxes() {
+    const wrap = $("#cats");
+    wrap.innerHTML = "";
+    for (const id of status.categories) {
+      const label = document.createElement("label");
+      label.className = "pill inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 px-2.5 py-1 text-xs text-slate-400 hover:border-slate-600";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = id;
+      input.className = "h-3 w-3 accent-sky-400";
+      input.addEventListener("change", () => label.setAttribute("aria-pressed", String(input.checked)));
+      const text = document.createElement("span");
+      text.textContent = CATEGORY_LABELS[id] || id;
+      label.append(input, text);
+      wrap.appendChild(label);
+    }
+  }
+
+  function buildTierOptions() {
+    const sel = $("#f-tier");
+    sel.innerHTML = "";
+    for (const t of status.tiers) {
+      const o = document.createElement("option");
+      o.value = t;
+      o.textContent = t;
+      sel.appendChild(o);
+    }
+    sel.value = "Free Tier";
+  }
+
+  function resetForm() {
+    editingId = null;
+    form.reset();
+    $("#f-icon").value = "wrench";
+    $("#f-tier").value = "Free Tier";
+    for (const input of $("#cats").querySelectorAll("input")) {
+      input.checked = false;
+      input.closest("label").setAttribute("aria-pressed", "false");
+    }
+    $("#form-title").textContent = "Add a tool";
+    $("#submit-label").textContent = "Add tool";
+    $("#cancel-edit").classList.add("hidden");
+    $("#form-status").textContent = "";
+    icons();
+  }
+
+  function startEdit(tool) {
+    editingId = tool.id;
+    $("#f-name").value = tool.name;
+    $("#f-url").value = tool.url;
+    $("#f-tier").value = tool.tier;
+    $("#f-icon").value = tool.icon;
+    $("#f-desc").value = tool.desc;
+    $("#f-code-label").value = tool.code ? tool.code.label : "";
+    $("#f-code-value").value = tool.code ? tool.code.value : "";
+    for (const input of $("#cats").querySelectorAll("input")) {
+      input.checked = tool.cats.includes(input.value);
+      input.closest("label").setAttribute("aria-pressed", String(input.checked));
+    }
+    $("#form-title").textContent = "Edit " + tool.name;
+    $("#submit-label").textContent = "Save changes";
+    $("#cancel-edit").classList.remove("hidden");
+    $("#form-status").textContent = "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    $("#f-name").focus();
+    icons();
+  }
+
+  function readForm() {
+    const cats = [...$("#cats").querySelectorAll("input:checked")].map((i) => i.value);
+    const codeValue = $("#f-code-value").value.trim();
+    return {
+      name: $("#f-name").value.trim(),
+      url: $("#f-url").value.trim(),
+      cats,
+      tier: $("#f-tier").value,
+      icon: $("#f-icon").value.trim() || "wrench",
+      desc: $("#f-desc").value.trim(),
+      code: codeValue ? { label: $("#f-code-label").value.trim() || "Code", value: codeValue } : null,
+    };
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = $("#submit-btn");
+    const payload = readForm();
+
+    if (payload.cats.length === 0) {
+      $("#form-status").textContent = "Pick at least one category.";
+      return;
+    }
+
+    btn.disabled = true;
+    $("#form-status").textContent = "Saving…";
+    try {
+      if (editingId === null) {
+        await api("/api/tools", { method: "POST", body: JSON.stringify(payload) });
+        toast("Added " + payload.name);
+      } else {
+        await api("/api/tools/" + editingId, { method: "PUT", body: JSON.stringify(payload) });
+        toast("Saved " + payload.name);
+      }
+      resetForm();
+      await load();
+    } catch (err) {
+      $("#form-status").textContent = err.message;
+      toast(err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $("#cancel-edit").addEventListener("click", resetForm);
+
+  /* ---------------- list ---------------- */
+
+  function renderRows() {
+    const q = $("#filter").value.trim().toLowerCase();
+    const visible = q
+      ? tools.filter((t) => (t.name + " " + t.desc + " " + t.cats.join(" ")).toLowerCase().includes(q))
+      : tools;
+
+    rowsEl.innerHTML = "";
+    for (const tool of visible) {
+      const tr = document.createElement("tr");
+      tr.className = "row border-b border-slate-800/40";
+
+      const nameTd = document.createElement("td");
+      nameTd.className = "px-5 py-3 align-top";
+      const nameEl = document.createElement("div");
+      nameEl.className = "font-medium text-slate-100";
+      nameEl.textContent = tool.name;
+      const urlEl = document.createElement("div");
+      urlEl.className = "mt-0.5 max-w-[18rem] truncate font-mono text-[10px] text-slate-500";
+      urlEl.textContent = tool.url;
+      urlEl.title = tool.url;
+      nameTd.append(nameEl, urlEl);
+
+      const catsTd = document.createElement("td");
+      catsTd.className = "px-3 py-3 align-top font-mono text-[10px] uppercase tracking-wider text-slate-500";
+      catsTd.textContent = tool.cats.join(", ");
+
+      const tierTd = document.createElement("td");
+      tierTd.className = "px-3 py-3 align-top";
+      const badge = document.createElement("span");
+      badge.className = "rounded-md border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider";
+      badge.textContent = tool.tier;
+      if (tool.tier === "Forever Free") badge.classList.add("border-neon/30", "bg-neon/10", "text-neon");
+      else if (tool.tier === "Free Tier") badge.classList.add("border-elec/30", "bg-elec/10", "text-elec");
+      else badge.classList.add("border-violet-400/30", "bg-violet-400/10", "text-violet-300");
+      tierTd.appendChild(badge);
+
+      const codeTd = document.createElement("td");
+      codeTd.className = "px-3 py-3 align-top font-mono text-[11px] text-neon";
+      codeTd.textContent = tool.code ? tool.code.value : "—";
+
+      const actionsTd = document.createElement("td");
+      actionsTd.className = "px-5 py-3 text-right align-top whitespace-nowrap";
+      const edit = document.createElement("button");
+      edit.className = "btn btn-ghost !px-2 !py-1 !text-xs";
+      edit.textContent = "Edit";
+      edit.addEventListener("click", () => startEdit(tool));
+      const del = document.createElement("button");
+      del.className = "btn btn-danger ml-2 !px-2 !py-1 !text-xs";
+      del.textContent = "Delete";
+      del.addEventListener("click", async () => {
+        if (!confirm(`Delete "${tool.name}"? This can't be undone from here.`)) return;
+        try {
+          await api("/api/tools/" + tool.id, { method: "DELETE" });
+          toast("Deleted " + tool.name);
+          if (editingId === tool.id) resetForm();
+          await load();
+        } catch (err) {
+          toast(err.message);
+        }
+      });
+      actionsTd.append(edit, del);
+
+      tr.append(nameTd, catsTd, tierTd, codeTd, actionsTd);
+      rowsEl.appendChild(tr);
+    }
+
+    $("#empty-row").classList.toggle("hidden", visible.length > 0);
+    $("#count-badge").textContent = tools.length + " tools";
+  }
+
+  $("#filter").addEventListener("input", renderRows);
+
+  /* ---------------- load ---------------- */
+
+  async function load() {
+    try {
+      const data = await api("/api/tools");
+      tools = data.tools;
+      renderRows();
+    } catch (err) {
+      toast("Could not load tools: " + err.message);
+    }
+  }
+
+  async function loadStatus() {
+    const data = await api("/api/status");
+    Object.assign(status, data);
+    renderBanner();
+    buildCategoryBoxes();
+    buildTierOptions();
+  }
+
+  $("#refresh").addEventListener("click", () => { loadStatus().then(load); });
+
+  $("#save-key").addEventListener("click", async () => {
+    const value = $("#key").value.trim();
+    if (value) localStorage.setItem(KEY_STORAGE, value);
+    else localStorage.removeItem(KEY_STORAGE);
+    await loadStatus();
+    await load();
+    toast(status.writable ? "Key accepted — editing unlocked" : "Key saved, but the server rejected it");
+  });
+
+  $("#key").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#save-key").click(); });
+
+  /* ---------------- boot ---------------- */
+
+  $("#key").value = key();
+  (async () => {
+    try {
+      await loadStatus();
+    } catch (err) {
+      toast("Could not reach the API: " + err.message);
+    }
+    await load();
+    icons();
+  })();
+})();
+</script>
+</body>
+</html>
