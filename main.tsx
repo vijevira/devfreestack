@@ -81,6 +81,31 @@ async function getAdminSession(req: Request) {
 async function handler(req: Request): Promise<Response> {
   const { pathname } = new URL(req.url);
 
+  if (pathname === "/robots.txt" && req.method === "GET") {
+    return new Response(
+      [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /admin.html",
+        "Disallow: /api/",
+        "Sitemap: https://devfreestack.val.run/sitemap.xml",
+      ].join("\n") + "\n",
+      { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=86400" } },
+    );
+  }
+
+  if (pathname === "/sitemap.xml" && req.method === "GET") {
+    return new Response(
+      [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        "  <url><loc>https://devfreestack.val.run/</loc></url>",
+        "</urlset>",
+      ].join("\n") + "\n",
+      { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=86400" } },
+    );
+  }
+
   if (pathname === "/admin.html") {
     const session = await getAdminSession(req);
     if (!session) {
