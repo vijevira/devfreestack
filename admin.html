@@ -79,6 +79,9 @@
       <a href="/" class="btn btn-ghost">
         <i data-lucide="external-link" class="h-3.5 w-3.5"></i> View site
       </a>
+      <button id="logout" class="btn btn-ghost">
+        <i data-lucide="log-out" class="h-3.5 w-3.5"></i> Log out
+      </button>
     </div>
   </div>
 </header>
@@ -88,20 +91,16 @@
   <!-- Setup / auth banner -->
   <div id="banner" class="mb-6 hidden rounded-xl border px-4 py-3 text-sm"></div>
 
-  <!-- Access key -->
+  <!-- Account authentication -->
   <section class="mb-6 rounded-2xl border border-slate-800/80 bg-ink-900/40 p-5">
-    <div class="flex flex-wrap items-end gap-3">
+    <div class="flex flex-wrap items-center gap-3">
       <div class="min-w-[16rem] flex-1">
-        <label class="label" for="key">Admin key</label>
-        <input id="key" type="password" class="field font-mono" placeholder="Paste the ADMIN_KEY value" autocomplete="off" />
+        <p class="text-sm font-medium text-white">Authenticated admin session</p>
         <p class="hint">
-          Stored only in this browser's <code class="font-mono">localStorage</code> and sent as an
-          <code class="font-mono">X-Admin-Key</code> header. It must match the val's <code class="font-mono">ADMIN_KEY</code> environment variable.
+          This dashboard uses your Val Town account session. The reusable admin key is no longer stored in the browser.
         </p>
       </div>
-      <button id="save-key" class="btn btn-ghost">
-        <i data-lucide="key-round" class="h-3.5 w-3.5"></i> Save key
-      </button>
+      <span class="rounded-md border border-neon/30 bg-neon/10 px-2 py-1 font-mono text-xs text-neon">Val Town OAuth</span>
     </div>
   </section>
 
@@ -207,7 +206,6 @@
 (function () {
   "use strict";
 
-  const KEY_STORAGE = "devfreestack:adminKey";
   const CATEGORY_LABELS = {
     dns: "DNS & Domain",
     comms: "Communication & Email",
@@ -241,13 +239,9 @@
 
   function icons() { if (window.lucide) window.lucide.createIcons(); }
 
-  function key() { return localStorage.getItem(KEY_STORAGE) || ""; }
-
   async function api(path, options = {}) {
     const headers = Object.assign({ "content-type": "application/json" }, options.headers || {});
-    const k = key();
-    if (k) headers["x-admin-key"] = k;
-    const res = await fetch(path, Object.assign({}, options, { headers }));
+    const res = await fetch(path, Object.assign({}, options, { headers, credentials: "same-origin" }));
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
     return body;
@@ -262,24 +256,15 @@
     if (!status.configured) {
       el.classList.remove("hidden");
       el.classList.add("border-amber-500/40", "bg-amber-500/10", "text-amber-200");
-      el.innerHTML =
-        '<strong class="font-semibold">Writes are disabled.</strong> This val has no <code class="font-mono">ADMIN_KEY</code> set, ' +
-        'so the API rejects every create/update/delete. Add one, then paste the same value above.' +
-        '<br><span class="mt-1 inline-block font-mono text-xs text-amber-300/90">' +
-        '👉 Add ADMIN_KEY here: https://www.val.town/x/vijevira/devfreestack/environment-variables?key=ADMIN_KEY</span>';
-      return;
-    }
-
-    if (!status.writable) {
-      el.classList.remove("hidden");
-      el.classList.add("border-sky-500/40", "bg-sky-500/10", "text-sky-200");
-      el.innerHTML = '<strong class="font-semibold">Locked.</strong> Enter the admin key above to enable editing.';
+      el.textContent = "Admin authentication is not configured on this val.";
       return;
     }
 
     el.classList.remove("hidden");
     el.classList.add("border-neon/40", "bg-neon/10", "text-neon");
-    el.innerHTML = '<strong class="font-semibold">Unlocked.</strong> You can add, edit and delete tools.';
+    el.innerHTML = status.authenticated
+      ? '<strong class="font-semibold">Authenticated.</strong> You can add, edit and delete tools.'
+      : '<strong class="font-semibold">Not authenticated.</strong> Sign in with the authorized Val Town account.';
   }
 
   /* ---------------- form ---------------- */
@@ -494,20 +479,16 @@
 
   $("#refresh").addEventListener("click", () => { loadStatus().then(load); });
 
-  $("#save-key").addEventListener("click", async () => {
-    const value = $("#key").value.trim();
-    if (value) localStorage.setItem(KEY_STORAGE, value);
-    else localStorage.removeItem(KEY_STORAGE);
-    await loadStatus();
-    await load();
-    toast(status.writable ? "Key accepted — editing unlocked" : "Key saved, but the server rejected it");
+  $("#logout").addEventListener("click", async () => {
+    try {
+      await fetch("/auth/logout", { method: "POST", credentials: "same-origin" });
+    } finally {
+      window.location.href = "/";
+    }
   });
-
-  $("#key").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#save-key").click(); });
 
   /* ---------------- boot ---------------- */
 
-  $("#key").value = key();
   (async () => {
     try {
       await loadStatus();
