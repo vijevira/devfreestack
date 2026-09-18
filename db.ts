@@ -244,26 +244,54 @@ export async function createTool(input: ToolInput): Promise<Tool> {
   return (await getTool(Number(result.lastInsertRowid)))!;
 }
 
-export async function updateTool(id: number, input: ToolInput): Promise<Tool | null> {
+export async function updateTool(
+  id: number,
+  input: Partial<ToolInput>,
+): Promise<Tool | null> {
   await initDb();
   const existing = await getTool(id);
   if (!existing) return null;
 
+  const fields: string[] = [];
+  const args: unknown[] = [];
+
+  if ("name" in input) {
+    fields.push("name = ?");
+    args.push(input.name);
+  }
+  if ("cats" in input) {
+    fields.push("cats = ?");
+    args.push(input.cats!.join(","));
+  }
+  if ("tier" in input) {
+    fields.push("tier = ?");
+    args.push(input.tier);
+  }
+  if ("icon" in input) {
+    fields.push("icon = ?");
+    args.push(input.icon);
+  }
+  if ("url" in input) {
+    fields.push("url = ?");
+    args.push(input.url);
+  }
+  if ("desc" in input) {
+    fields.push("description = ?");
+    args.push(input.desc);
+  }
+  if ("code" in input) {
+    fields.push("code_label = ?", "code_value = ?");
+    args.push(input.code?.label ?? null, input.code?.value ?? null);
+  }
+
+  if (fields.length === 0) return existing;
+
+  fields.push("updated_at = datetime('now')");
+  args.push(id);
+
   await sqlite.execute({
-    sql: `UPDATE tools SET name = ?, cats = ?, tier = ?, icon = ?, url = ?, description = ?,
-                           code_label = ?, code_value = ?, updated_at = datetime('now')
-          WHERE id = ?`,
-    args: [
-      input.name,
-      input.cats.join(","),
-      input.tier,
-      input.icon,
-      input.url,
-      input.desc,
-      input.code?.label ?? null,
-      input.code?.value ?? null,
-      id,
-    ],
+    sql: `UPDATE tools SET ${fields.join(", ")} WHERE id = ?`,
+    args,
   });
 
   return getTool(id);
