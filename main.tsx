@@ -18,6 +18,7 @@ import {
   ValidationError,
   countTools,
   createTool,
+  getTool,
   deleteTool,
   isDuplicateNameError,
   listTools,
@@ -77,6 +78,14 @@ async function handler(req: Request): Promise<Response> {
 
     if (pathname === "/api/tools" && req.method === "GET") {
       return json({ tools: await listTools() });
+    }
+
+    const toolMatch = pathname.match(/^\/api\/tools\/(\d+)$/);
+    if (toolMatch && req.method === "GET") {
+      const id = Number(toolMatch[1]);
+      const tool = await getTool(id);
+      if (!tool) return fail(`No tool with id ${id}.`, 404);
+      return json({ tool });
     }
 
     /* ---------------- Writes (Val Town account required) ---------------- */
