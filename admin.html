@@ -7,12 +7,8 @@
 <meta name="robots" content="noindex, nofollow" />
 <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script src="https://esm.town/v/std/catch"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://unpkg.com/lucide@0.510.0/dist/umd/lucide.min.js"></script>
 
 <script>
   tailwind.config = {
@@ -20,8 +16,8 @@
       extend: {
         colors: { ink: { 950: "#070b0f", 900: "#0b1117", 800: "#131c26" }, elec: "#38bdf8", neon: "#4ade80" },
         fontFamily: {
-          sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-          mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+          sans: ["ui-sans-serif", "system-ui", "sans-serif"],
+          mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
         },
       },
     },
