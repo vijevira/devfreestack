@@ -4,11 +4,14 @@
  * `/api/*` is handled here; everything else falls through to the static file
  * server (index.html, admin.html, favicon.svg).
  *
- * Reads are public. Writes require the ADMIN_KEY environment variable, sent by
- * the admin UI as an `X-Admin-Key` header — without it anyone who found the URL
- * could edit the directory.
+ * Reads are public. Admin writes require a signed-in Val Town account whose
+ * username matches ADMIN_VAL_USERNAME. Sessions are managed by Val Town OAuth.
  */
 import { staticHTTPServer } from "https://esm.town/v/std/utils/index.ts";
+import {
+  getOAuthUserData,
+  oauthMiddleware,
+} from "https://esm.town/v/std/oauth/middleware.ts";
 import {
   CATEGORY_IDS,
   TIERS,
@@ -29,27 +32,31 @@ const json = (data: unknown, status = 200) =>
 
 const fail = (message: string, status: number) => json({ error: message }, status);
 
-/**
- * Write access check.
- * Returns "ok", "missing" (no key configured on the val), or "denied".
- */
-function checkAdmin(req: Request): "ok" | "missing" | "denied" {
-  const expected = Deno.env.get("ADMIN_KEY") ?? "";
-  if (!expected) return "missing";
+async function getAdminSession(req: Request) {
+  const session = await getOAuthUserData(req);
+  if (!session?.user) return null;
 
-  const given = req.headers.get("x-admin-key") ?? "";
-  if (given.length !== expected.length) return "denied";
+  const allowedUsername = Deno.env.get("ADMIN_VAL_USERNAME")?.trim().toLowerCase();
+  if (!allowedUsername) return null;
 
-  // Constant-time-ish compare: don't bail early on the first mismatched byte.
-  let diff = 0;
-  for (let i = 0; i < expected.length; i++) {
-    diff |= given.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return diff === 0 ? "ok" : "denied";
+  const username = session.user.username?.trim().toLowerCase();
+  if (!username || username !== allowedUsername) return null;
+
+  return session;
 }
 
-export default async function handler(req: Request): Promise<Response> {
+async function handler(req: Request): Promise<Response> {
   const { pathname } = new URL(req.url);
+
+  if (pathname === "/admin.html") {
+    const session = await getAdminSession(req);
+    if (!session) {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: "/auth/login?returnTo=/admin.html" },
+      });
+    }
+  }
 
   if (!pathname.startsWith("/api/")) return serveStatic(req);
 
@@ -57,9 +64,11 @@ export default async function handler(req: Request): Promise<Response> {
     /* ---------------- Reads (public) ---------------- */
 
     if (pathname === "/api/status" && req.method === "GET") {
+      const admin = await getAdminSession(req);
       return json({
-        writable: checkAdmin(req) === "ok",
-        configured: (Deno.env.get("ADMIN_KEY") ?? "").length > 0,
+        authenticated: !!admin,
+        writable: !!admin,
+        configured: !!Deno.env.get("ADMIN_VAL_USERNAME"),
         count: await countTools(),
         categories: CATEGORY_IDS,
         tiers: TIERS,
@@ -70,16 +79,10 @@ export default async function handler(req: Request): Promise<Response> {
       return json({ tools: await listTools() });
     }
 
-    /* ---------------- Writes (admin key required) ---------------- */
+    /* ---------------- Writes (Val Town account required) ---------------- */
 
-    const auth = checkAdmin(req);
-    if (auth === "missing") {
-      return fail(
-        "Writes are disabled: set the ADMIN_KEY environment variable on this val to enable the admin API.",
-        503,
-      );
-    }
-    if (auth === "denied") return fail("Invalid or missing X-Admin-Key header.", 401);
+    const admin = await getAdminSession(req);
+    if (!admin) return fail("Admin authentication required. Open /admin.html and sign in with the authorized Val Town account.", 401);
 
     if (pathname === "/api/tools" && req.method === "POST") {
       const body = await req.json().catch(() => null);
@@ -92,10 +95,26 @@ export default async function handler(req: Request): Promise<Response> {
     if (match) {
       const id = Number(match[1]);
 
-      if (req.method === "PUT" || req.method === "PATCH") {
+      if (req.method === "PATCH") {
         const body = await req.json().catch(() => null);
         if (body === null) return fail("Request body must be valid JSON.", 400);
-        const tool = await updateTool(id, validate(body) as Parameters<typeof updateTool>[1]);
+
+        const patch = validate(body, true);
+        if (Object.keys(patch).length === 0) {
+          return fail("PATCH body must contain at least one editable field.", 400);
+        }
+
+        const tool = await updateTool(id, patch);
+        if (!tool) return fail(`No tool with id ${id}.`, 404);
+        return json({ tool });
+      }
+
+      if (req.method === "PUT") {
+        const body = await req.json().catch(() => null);
+        if (body === null) return fail("Request body must be valid JSON.", 400);
+
+        const input = validate(body);
+        const tool = await updateTool(id, input);
         if (!tool) return fail(`No tool with id ${id}.`, 404);
         return json({ tool });
       }
@@ -116,3 +135,5 @@ export default async function handler(req: Request): Promise<Response> {
     return fail("Something went wrong on the server.", 500);
   }
 }
+
+export default oauthMiddleware(handler);
