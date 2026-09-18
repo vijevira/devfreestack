@@ -16,8 +16,8 @@ Tools live in SQLite, not in the HTML. The page fetches them at runtime, so addi
 flowchart LR
   A[Browser] -->|GET /| B[main.tsx]
   A -->|GET /api/tools| B
-  C[Admin UI] -->|POST/PUT/DELETE + X-Admin-Key| B
-  B -->|static files| D[index.html / admin.html]
+  C[Admin UI] -->|POST/PATCH/PUT/DELETE + Val Town OAuth session| B
+  B -->|security headers + static files| D[index.html / admin.html]
   B -->|reads & writes| E[(SQLite tools)]
 ```
 
@@ -34,19 +34,21 @@ flowchart LR
 
 The admin UI is at **[`/admin.html`](url:admin.html)** (not linked from the public site, and marked `noindex`).
 
-Writes require an `ADMIN_KEY` environment variable. Reads are public; without the key configured the API rejects every create/update/delete with a `503`, and the admin page shows a setup banner. Enter the key once and the page stores it in `localStorage` for next time.
+Writes require an authenticated Val Town session and are restricted server-side to the username configured in the encrypted `ADMIN_VAL_USERNAME` environment variable. The browser does not store or send a reusable admin credential. Reads remain public.
 
-👉 Add `ADMIN_KEY` here: https://www.val.town/x/vijevira/devfreestack/environment-variables?key=ADMIN_KEY
+The authorized account is configured with `ADMIN_VAL_USERNAME`; do not expose this value in client-side code.
 
 ### API
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
 | `GET` | `/api/tools` | public | List all tools |
-| `GET` | `/api/status` | public | Write availability, count, category & tier vocabulary |
-| `POST` | `/api/tools` | `X-Admin-Key` | Create |
-| `PUT` | `/api/tools/:id` | `X-Admin-Key` | Update |
-| `DELETE` | `/api/tools/:id` | `X-Admin-Key` | Delete |
+| `GET` | `/api/tools/:id` | public | Get one tool |
+| `GET` | `/api/status` | public | Auth/write availability, count, category & tier vocabulary |
+| `POST` | `/api/tools` | Val Town OAuth | Create |
+| `PATCH` | `/api/tools/:id` | Val Town OAuth | Partial update |
+| `PUT` | `/api/tools/:id` | Val Town OAuth | Full update |
+| `DELETE` | `/api/tools/:id` | Val Town OAuth | Delete |
 
 Validation happens server-side (`validate()` in `db.ts`): name and description required, URL must be a valid absolute `http(s)` URL, tier must be one of the three known values, at least one category required. Names are unique case-insensitively. Failures return `400` with a human-readable message, `409` on a duplicate name.
 
@@ -98,8 +100,9 @@ The repo at [github.com/vijevira/devfreestack](https://github.com/vijevira/devfr
 **mirror, not the source of truth** — the val is.
 
 [`publish-to-github.ts`](url:publish-to-github.ts) syncs this val's files to the repo. Click Run: it
-walks every file, compares each against what's on GitHub, and commits only what changed. Safe to
-re-run whenever you edit the directory here.
+walks every file, compares each against what's on GitHub, and creates **one atomic commit** containing
+all changes. It also removes remote files that no longer exist in the val. Safe to re-run whenever you
+edit the directory here; if nothing changed, no commit is created.
 
 Requires a `GITHUB_TOKEN` environment variable with write access to the repo — classic token with
 `repo` scope, or a fine-grained token with **Contents: Read and write**.
@@ -109,11 +112,10 @@ Requires a `GITHUB_TOKEN` environment variable with write access to the repo —
 Optional overrides: `GITHUB_REPO` (defaults to `vijevira/devfreestack`) and `GITHUB_BRANCH`
 (defaults to the repo's default branch).
 
-Two things it deliberately does not do:
+One thing it deliberately does not do:
 
 - **It never publishes itself.** `publish-to-github.ts` is in the sync's skip list, so the repo
   contains only the project.
-- **It never deletes.** Removing a file here leaves it on GitHub — delete it there by hand.
 
 ## Contributing
 
