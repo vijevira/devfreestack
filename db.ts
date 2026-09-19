@@ -9,7 +9,7 @@
 import { sqlite } from "https://esm.town/v/std/sqlite/main.ts";
 import { SEED_TOOLS } from "./seed-data.ts";
 
-export const CATEGORY_IDS = ["dns", "comms", "ai", "edge", "paas", "db"] as const;
+export const CATEGORY_IDS = ["dns", "comms", "ai", "edge", "paas", "db", "storage"] as const;
 export const TIERS = ["Forever Free", "Free Tier", "Open Source"] as const;
 
 export type CategoryId = (typeof CATEGORY_IDS)[number];
@@ -66,6 +66,7 @@ async function migrate() {
 
   const { rows } = await sqlite.execute("SELECT COUNT(*) AS n FROM tools");
   if (Number(rows[0]?.n ?? 0) === 0) await seed();
+  else await ensureSeedTools();
 }
 
 async function seed() {
@@ -86,6 +87,30 @@ async function seed() {
       ],
     })),
   );
+}
+
+async function ensureSeedTools() {
+  const { rows } = await sqlite.execute("SELECT COALESCE(MAX(sort_order), -1) AS max FROM tools");
+  let nextOrder = Number(rows[0]?.max ?? -1) + 1;
+
+  for (const t of SEED_TOOLS) {
+    const result = await sqlite.execute({
+      sql: `INSERT OR IGNORE INTO tools (name, cats, tier, icon, url, description, code_label, code_value, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        t.name,
+        t.cats.join(","),
+        t.tier,
+        t.icon,
+        t.url,
+        t.desc,
+        t.code?.label ?? null,
+        t.code?.value ?? null,
+        nextOrder,
+      ],
+    });
+    if (Number(result.rowsAffected ?? 0) > 0) nextOrder += 1;
+  }
 }
 
 /** Wipe and re-seed from seed-data.ts. Destructive — for development. */

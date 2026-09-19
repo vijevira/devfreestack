@@ -5,7 +5,7 @@
  * through the admin UI at /admin.html. Changing this file will NOT overwrite
  * an already-seeded database; use the admin UI or `resetSeed()` in db.ts.
  *
- * `cats` accepts one or more of: dns, comms, ai, edge, paas, db
+ * `cats` accepts one or more of: dns, comms, ai, edge, paas, db, storage
  */
 export type SeedTool = {
   name: string;
@@ -263,5 +263,25 @@ export const SEED_TOOLS: SeedTool[] = [
     url: "https://www.cloudamqp.com/",
     desc:
       "Managed RabbitMQ with a free plan — message queues, workers and pub/sub without running a broker yourself.",
+  },
+
+  /* ---------------- Storage ---------------- */
+  {
+    name: "Val Town",
+    cats: ["paas"],
+    tier: "Forever Free",
+    icon: "code-2",
+    url: "https://www.val.town/",
+    desc:
+      "Run small TypeScript and JavaScript programs as public vals, HTTP endpoints, cron jobs and more on a $0 free plan.",
+  },
+  {
+    name: "Backblaze B2",
+    cats: ["storage"],
+    tier: "Free Tier",
+    icon: "hard-drive",
+    url: "https://www.backblaze.com/cloud-storage",
+    desc:
+      "S3-compatible object storage with the first 10 GB free, free uploads and free egress up to 3× your average monthly storage.",
   },
 ];

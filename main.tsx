@@ -74,6 +74,7 @@ function esc(value: string): string {
 const CATEGORY_LABELS: Record<string, string> = {
   dns: "DNS & Domain", comms: "Communication & Email", ai: "AI & Coding",
   edge: "Frontend & Edge", paas: "Backend & PaaS", db: "Databases & Caching",
+  storage: "Storage",
 };
 
 function toolPath(tool: { id: number }): string {
