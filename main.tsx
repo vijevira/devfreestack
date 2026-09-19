@@ -1,8 +1,8 @@
 /**
  * DevFreeStack server.
  *
- * `/api/*` is handled here; everything else falls through to the static file
- * server (index.html, admin.html, favicon.svg).
+ * `/api/*` is handled here; public pages and assets fall through to the
+ * static file server. The admin dashboard is exposed at `/admin`.
  *
  * Reads are public. Admin writes require a signed-in Val Town account whose
  * username matches ADMIN_VAL_USERNAME. Sessions are managed by Val Town OAuth.
@@ -151,7 +151,7 @@ async function handler(req: Request): Promise<Response> {
       [
         "User-agent: *",
         "Allow: /",
-        "Disallow: /admin.html",
+        "Disallow: /admin",
         "Disallow: /api/",
         "Sitemap: https://devfreestack.val.run/sitemap.xml",
       ].join("\n") + "\n",
@@ -177,13 +177,23 @@ async function handler(req: Request): Promise<Response> {
   }
 
   if (pathname === "/admin.html") {
+    return new Response(null, {
+      status: 301,
+      headers: { Location: "/admin" },
+    });
+  }
+
+  if (pathname === "/admin") {
     const session = await getAdminSession(req);
     if (!session) {
       return new Response(null, {
         status: 302,
-        headers: { Location: "/auth/login?returnTo=/admin.html" },
+        headers: { Location: "/auth/login?returnTo=/admin" },
       });
     }
+
+    const adminRequest = new Request(new URL("/admin.html", req.url), req);
+    return secureResponse(await serveStatic(adminRequest));
   }
 
   // Public, crawlable tool pages give search engines stable URLs for each directory entry.
