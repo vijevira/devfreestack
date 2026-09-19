@@ -80,25 +80,6 @@ function toolPath(tool: { id: number }): string {
   return `/tools/${tool.id}`;
 }
 
-function renderSeoDirectory(tools: Awaited<ReturnType<typeof listTools>>): string {
-  const links = tools.map((tool) => `
-    <li>
-      <a href="${toolPath(tool)}">${esc(tool.name)}</a>
-      <span> — ${esc(tool.desc)}</span>
-    </li>`).join("");
-  return `
-  <section class="mx-auto max-w-7xl px-4 pb-10 sm:px-6" aria-labelledby="directory-heading">
-    <h2 id="directory-heading" class="text-xl font-bold text-white">Free Developer Tools Directory</h2>
-    <p class="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
-      Browse free hosting, databases, DNS, communication, AI, frontend, and backend tools.
-      Open any tool for its free-tier details and official website.
-    </p>
-    <ul class="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
-      ${links}
-    </ul>
-  </section>`;
-}
-
 function renderToolPage(tool: Awaited<ReturnType<typeof getTool>> extends infer T ? Exclude<T, null> : never): string {
   const title = `${tool.name} — Free Developer Tool | DevFreeStack`;
   const description = `${tool.desc} Free tier: ${tool.tier}. Discover ${tool.name} on DevFreeStack.`;
@@ -216,15 +197,7 @@ async function handler(req: Request): Promise<Response> {
   }
 
   if (pathname === "/" && req.method === "GET") {
-    const response = await serveStatic(req);
-    if (!response.ok) return secureResponse(response);
-    const html = await response.text();
-    const tools = await listTools();
-    const seoSection = renderSeoDirectory(tools);
-    return secureResponse(new Response(
-      html.replace('<main id="tools"', seoSection + '\n  <main id="tools"'),
-      { status: response.status, headers: response.headers },
-    ));
+    return secureResponse(await serveStatic(req));
   }
 
   if (!pathname.startsWith("/api/")) return secureResponse(await serveStatic(req));
