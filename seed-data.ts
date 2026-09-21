@@ -284,4 +284,22 @@ export const SEED_TOOLS: SeedTool[] = [
     desc:
       "S3-compatible object storage with the first 10 GB free, free uploads and free egress up to 3× your average monthly storage.",
   },
+  {
+    name: "Cloudinary",
+    cats: ["storage"],
+    tier: "Free Tier",
+    icon: "image",
+    url: "https://cloudinary.com/",
+    desc:
+      "Image and video management with upload APIs, transformations and CDN delivery on a free plan with 25 monthly credits.",
+  },
+  {
+    name: "IDrive e2",
+    cats: ["storage"],
+    tier: "Free Tier",
+    icon: "hard-drive-download",
+    url: "https://www.idrive.com/s3-storage-e2/",
+    desc:
+      "S3-compatible object storage with a 10 GB free trial allowance, free API calls and egress up to 3× your active storage volume.",
+  },
 ];
