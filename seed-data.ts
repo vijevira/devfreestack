@@ -302,4 +302,13 @@ export const SEED_TOOLS: SeedTool[] = [
     desc:
       "S3-compatible object storage with a 10 GB free trial allowance, free API calls and egress up to 3× your active storage volume.",
   },
+  {
+    name: "Replit",
+    cats: ["paas"],
+    tier: "Free Tier",
+    icon: "code-2",
+    url: "https://replit.com/refer/vijevira",
+    desc:
+      "Browser-based development and app hosting platform with a free Starter plan, built-in database, daily free usage and one published live project.",
+  },
 ];
